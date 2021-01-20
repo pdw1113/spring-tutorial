@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="BoardMapper">
+
+	<!-- type은 parameterType에 사용되며, id는 select의 resultMap에 사용된다. -->
+	<!-- id는 PK, result는 일반 컬럼으로 등록한다. -->
+	<!-- property는  변수명, column은 DB 컬럼명으로 입력한다. -->
+	<resultMap type="Board" id="boardResultSet">
+		<id property="bNo" column="BNO"/>
+		<result property="bWritter" column="BWRITTER"/>
+		<result property="bPassword" column="BPASSWORD"/>
+		<result property="bPasswordEnc" column="BPASSWORDENC"/>
+		<result property="bSubject" column="BSUBJECT"/>
+		<result property="bContent" column="BCONTENT"/>
+		<result property="bRegDate" column="BREGDATE"/>
+		<result property="bModDate" column="BMODDATE"/>
+		<result property="bCount" column="BCOUNT"/>
+		<result property="bStatus" column="BSTATUS"/>
+		<result property="prebNo" column="PREBNO"/>
+		<result property="nextbNo" column="NEXTBNO"/>
+	</resultMap>
+	
+	<!-- VO의 변수를 이용하기 위해서는 #{변수명}으로 작성한다. -->
+	<insert id="insertBoard" parameterType="Board">
+		INSERT INTO BOARD 
+		VALUES(
+			BOARD_SEQUENCE.NEXTVAL,
+			#{bWritter},
+			#{bPassword},
+			#{bPasswordEnc},
+			#{bSubject},
+			#{bContent},
+			SYSDATE,
+			SYSDATE,
+			DEFAULT,
+			DEFAULT
+		)
+	</insert>
+	
+	<select id="selectBoardList" resultMap="boardResultSet">
+		SELECT * 
+		FROM BOARD 
+		WHERE BSTATUS = 'Y'
+		ORDER BY BNO DESC
+	</select>
+	
+	<select id="selectListCount" resultType="_int">
+		SELECT COUNT(*)
+		FROM BOARD
+		WHERE
+		BSTATUS = 'Y'
+	</select>
+	
+	<select id="selectBoard" parameterType="_int" resultMap="boardResultSet">
+		SELECT b.* FROM(
+			SELECT 
+			    BNO,
+			    BWRITTER,
+			    BPASSWORD,
+			    BPASSWORDENC,
+			    BSUBJECT,
+			    BCONTENT,
+			    BREGDATE,
+			    BMODDATE,
+			    BCOUNT,
+			    BSTATUS,
+			    LAG(BNO,1,-1) OVER(ORDER BY BNO ASC) AS PREBNO,
+			    LEAD(BNO,1,-1) OVER(ORDER BY BNO ASC) AS NEXTBNO 
+			FROM BOARD
+			) b
+		WHERE b.BNO = #{bNo}
+	</select>
+	
+	<update id="countUp" parameterType="_int">
+		UPDATE BOARD 
+		SET BCOUNT = BCOUNT + 1
+		WHERE BNO = #{bNo}
+	</update>
+	
+	<delete id="deleteBoard" parameterType="_int">
+		DELETE FROM BOARD
+		WHERE BNO = #{bNo}
+	</delete>
+</mapper>
